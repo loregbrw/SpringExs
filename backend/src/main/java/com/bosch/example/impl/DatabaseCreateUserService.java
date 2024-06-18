@@ -1,6 +1,7 @@
 package com.bosch.example.impl;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -26,5 +27,10 @@ public class DatabaseCreateUserService implements UserService {
     @Override
     public List<UserData> findEmail(String email) {
         return repo.findByEmail(email);
+    }
+
+    @Override
+    public Optional<UserData> findId(Long id) {
+        return repo.findById(id);
     }
 }

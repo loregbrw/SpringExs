@@ -2,6 +2,9 @@ package com.bosch.example.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+import javax.swing.text.html.Option;
 
 import com.bosch.example.model.UserData;
 import com.bosch.example.services.UserService;
@@ -38,5 +41,19 @@ public class MockCreateUserService implements UserService {
         }
 
         return allUsers;
+    }
+
+    @Override
+    public Optional<UserData> findId(Long id) {
+
+        UserData findUser = null;
+
+        for (UserData user : users) {
+            if (user.getId().equals(id)) {
+                findUser = user;
+            }
+        }
+
+        return Optional.ofNullable(findUser);
     }
 }

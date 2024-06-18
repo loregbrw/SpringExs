@@ -13,8 +13,10 @@ import com.bosch.example.dto.JwtPayloadDto;
 import com.bosch.example.dto.LoginDto;
 import com.bosch.example.dto.TokenDto;
 import com.bosch.example.dto.UserDto;
+import com.bosch.example.model.ProductData;
 import com.bosch.example.model.UserData;
 import com.bosch.example.services.HashSaltingService;
+import com.bosch.example.services.ProductServer;
 import com.bosch.example.services.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -23,12 +25,15 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Base64;
 import java.util.Date;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.crypto.SecretKey;
 
+import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -39,6 +44,9 @@ public class BcryptController {
 
     @Autowired
     HashSaltingService hashService;
+
+    @Autowired
+    ProductServer productService;
 
     private Algorithm algorithm = Algorithm.HMAC256("chaveAleatoria");
 
@@ -102,7 +110,7 @@ public class BcryptController {
                 .withIssuer("etsDta1")
                 .withClaim("id", user.getId())
                 .withIssuedAt(new Date())
-                .withExpiresAt(new Date(System.currentTimeMillis() + 5000L))
+                // .withExpiresAt(new Date(System.currentTimeMillis() + 5000L))
                 .sign(algorithm);
                 
             return new AuthDto("Login efetuado!", jwtToken);
@@ -112,7 +120,7 @@ public class BcryptController {
     }
 
     @PostMapping("/product")
-    public String postMethodName(@RequestBody TokenDto param) {
+    public ResponseEntity<String> postMethodName(@RequestBody TokenDto param) {
 
         DecodedJWT decodedJWT;
 
@@ -122,12 +130,30 @@ public class BcryptController {
 
         } catch (JWTVerificationException e) {
             System.out.println("Inválido");
+            return ResponseEntity.status(401).build();
         }
-        
-        String[] chuncks = param.token().split("\\.");
 
         Claim id = decodedJWT.getClaim("id");
 
-        return id;
+        System.out.println(id.asLong());
+
+
+        Optional<UserData> user = service.findId(id.asLong());
+
+        if (user == null) {
+            System.out.println("Usuário não achado");
+            return ResponseEntity.status(401).build();
+        }
+
+        UserData u = user.get();
+
+        System.out.println(param.title());
+        System.out.println(param.value());
+
+        ProductData product = new ProductData(param.title(), param.value(), u);
+
+        productService.save(product);
+        
+        return ResponseEntity.ok().build();
     }
 }
